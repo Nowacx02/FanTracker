@@ -49,3 +49,25 @@ spring.datasource.url=jdbc:postgresql://localhost:5432/football_app
 spring.datasource.username=YOUR_POSTGRES_USERNAME
 spring.datasource.password=YOUR_POSTGRES_PASSWORD
 spring.jpa.hibernate.ddl-auto=update
+```
+3. Run the Spring Boot application via your IDE (IntelliJ/Eclipse) or using Maven:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+4. **Initial Data Import:** Use Postman or your browser to trigger the data imports from TheSportsDB:
+   * Import Teams: `POST http://localhost:8080/api/teams/import-ekstraklasa`
+   * Import Matches: `GET http://localhost:8080/api/matches/import-round?season=2025-2026&round=1` *(repeat for desired rounds)*
+   * Generate Table: `POST http://localhost:8080/api/teams/import-table`
+
+### Frontend Setup (React/Vite)
+1. Open a new terminal window and navigate to the frontend folder.
+2. Install the required dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open your browser and go to `http://localhost:5173`.
+
