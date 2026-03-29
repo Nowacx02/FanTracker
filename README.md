@@ -1,8 +1,8 @@
-# FanTracker 
+# FanTracker
 
 FanTracker is a comprehensive, full-stack web application designed for die-hard football fans. It allows users to track their away days, browse match schedules, view stadium details, watch video highlights, and compete with others in a global fan ranking.
 
-##Key Features
+## Key Features
 
 * **Match Center:** Browse fixtures and results. Filter matches by team or specific league rounds.
 * **Stadium Check-ins ("I was there!"):** Users can check in at matches they attend to build their personal fan history.
@@ -12,7 +12,7 @@ FanTracker is a comprehensive, full-stack web application designed for die-hard 
 * **Dynamic League Table:** The backend automatically calculates league standings (points, wins, losses, goal differences) locally based on stored match results, bypassing external API limits.
 * **External API Integration:** Seamlessly imports teams, matches, stadiums, badges, and video links from [TheSportsDB](https://www.thesportsdb.com/).
 
-##Tech Stack
+## Tech Stack
 
 This project is built as a monorepo containing both the backend and frontend.
 
@@ -31,7 +31,7 @@ This project is built as a monorepo containing both the backend and frontend.
 * **Jackson** (JSON parsing)
 * **Spring RestClient** (for external API calls)
 
-##Getting Started
+## Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine.
 
@@ -44,22 +44,8 @@ Follow these instructions to get a copy of the project up and running on your lo
 ### Backend Setup (Spring Boot)
 1. Open pgAdmin or your Postgres CLI and create a new database (e.g., `football_app`).
 2. Navigate to the backend directory of the project (e.g., `src/main/resources/`) and configure your `application.properties` file:
-   ```properties
-   spring.datasource.url=jdbc:postgresql://localhost:5432/football_app
-   spring.datasource.username=YOUR_POSTGRES_USERNAME
-   spring.datasource.password=YOUR_POSTGRES_PASSWORD
-   spring.jpa.hibernate.ddl-auto=update
-3.Run the Spring Boot application via your IDE (IntelliJ/Eclipse) or using Maven:
-   ./mvnw spring-boot:run
-4. Initial Data Import: Use Postman or your browser to trigger the data imports from TheSportsDB:
-   Import Teams: POST http://localhost:8080/api/teams/import-ekstraklasa
-   Import Matches: GET http://localhost:8080/api/matches/import-round?season=2025-2026&round=1 (repeat for desired rounds)
-   Generate Table: POST http://localhost:8080/api/teams/import-table
-
-Frontend Setup (React/Vite)
-1. Open a new terminal window and navigate to the frontend folder.
-2. Install the required dependencies:
-   npm install
-3. Start the development server:
-   npm run dev
-5. Open your browser and go to http://localhost:5173.
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/football_app
+spring.datasource.username=YOUR_POSTGRES_USERNAME
+spring.datasource.password=YOUR_POSTGRES_PASSWORD
+spring.jpa.hibernate.ddl-auto=update
