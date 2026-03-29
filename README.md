@@ -12,7 +12,7 @@ FanTracker is a comprehensive, full-stack web application designed for die-hard 
 * **Dynamic League Table:** The backend automatically calculates league standings (points, wins, losses, goal differences) locally based on stored match results, bypassing external API limits.
 * **External API Integration:** Seamlessly imports teams, matches, stadiums, badges, and video links from [TheSportsDB](https://www.thesportsdb.com/).
 
-## 🛠️ Tech Stack
+##Tech Stack
 
 This project is built as a monorepo containing both the backend and frontend.
 
