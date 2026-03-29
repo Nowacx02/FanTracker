@@ -71,3 +71,11 @@ spring.jpa.hibernate.ddl-auto=update
    ```
 4. Open your browser and go to `http://localhost:5173`.
 
+## Screenshots
+<img width="1905" height="857" alt="1" src="https://github.com/user-attachments/assets/bae49c77-5798-4cbf-a6dd-45019358835d" />
+<img width="1890" height="867" alt="2" src="https://github.com/user-attachments/assets/adaeb578-c5d2-40b8-b222-347c579f8888" />
+<img width="1900" height="870" alt="3" src="https://github.com/user-attachments/assets/7fefe1d9-cd98-4e49-bac3-e7f854e90b1b" />
+<img width="1897" height="871" alt="4" src="https://github.com/user-attachments/assets/f709093a-e87e-464d-8d38-ec0612be7974" />
+
+
+
