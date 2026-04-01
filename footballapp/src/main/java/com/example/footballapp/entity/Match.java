@@ -34,7 +34,7 @@ public class Match {
     private Stadium stadium;
 
     @Column(unique = true)
-    private String externalApiId; // To przechowa idEvent z TheSportsDB
+    private String externalApiId; //id ze TheSportsDB
 
     private Integer matchRound;
 

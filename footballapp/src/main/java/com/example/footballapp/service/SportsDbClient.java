@@ -13,7 +13,6 @@ public class SportsDbClient {
         this.restClient = RestClient.builder().baseUrl(BASE_URL).build();
     }
 
-    // Metoda do pobierania drużyn
     public String getAllTeams(String leagueName) {
         return restClient.get()
                 .uri("/search_all_teams.php?l={league}", leagueName)
@@ -35,7 +34,6 @@ public class SportsDbClient {
                 .body(String.class);
     }
 
-    // --- NOWA METODA: Pobieranie tabeli ligowej ---
     public String getLeagueTable(String leagueId, String season) {
         return restClient.get()
                 .uri("/lookuptable.php?l={leagueId}&s={season}", leagueId, season)

@@ -75,10 +75,10 @@ public class DataImportService {
         }
     }
 
-
+    //IMPORT MECZÓW
     public void importMatchesForRound(String season, String round) {
         try {
-            // Pobieramy konkretną kolejkę (4422 to Ekstraklasa)
+            // (4422 to Ekstraklasa)
             String json = sportsDbClient.getRoundMatches("4422", season, round);
             JsonNode root = objectMapper.readTree(json);
             JsonNode events = root.get("events");
@@ -109,21 +109,18 @@ public class DataImportService {
                         match.setHomeTeam(homeTeamOpt.get());
                         match.setAwayTeam(awayTeamOpt.get());
 
-                        // --- NOWA LOGIKA DLA STADIONU ---
                         if (!idVenue.isBlank() && !idVenue.equals("null")) {
                             Optional<Stadium> stadiumOpt = stadiumRepository.findByExternalApiId(idVenue);
 
                             if (stadiumOpt.isPresent()) {
-                                // Mamy już ten stadion, po prostu go przypinamy
                                 match.setStadium(stadiumOpt.get());
                             } else {
-                                // Nie mamy stadionu, więc pytamy API
                                 String venueJson = sportsDbClient.getVenueDetails(idVenue);
                                 JsonNode venueRoot = objectMapper.readTree(venueJson);
                                 JsonNode venuesNode = venueRoot.get("venues");
 
                                 if (venuesNode != null && !venuesNode.isNull() && venuesNode.isArray()) {
-                                    JsonNode venueNode = venuesNode.get(0); // Pobieramy pierwszy (i jedyny) wynik
+                                    JsonNode venueNode = venuesNode.get(0);
 
                                     Stadium stadium = new Stadium();
                                     stadium.setExternalApiId(idVenue);
@@ -138,7 +135,6 @@ public class DataImportService {
                                         try {
                                             String[] cords = strMap.split(",");
 
-                                            // trim() usuwa ewentualne spacje przed i po liczbie
                                             stadium.setLatitude(Double.parseDouble(cords[0].trim()));
                                             stadium.setLongitude(Double.parseDouble(cords[1].trim()));
                                         } catch (Exception e) {
@@ -146,7 +142,6 @@ public class DataImportService {
                                         }
                                     }
 
-                                    // Niektóre obiekty API nie mają współrzędnych, więc te pola mogą pozostać puste w bazie
                                     stadiumRepository.save(stadium);
 
                                     match.setStadium(stadium);
@@ -154,7 +149,6 @@ public class DataImportService {
                                 }
                             }
                         }
-                        // --- KONIEC LOGIKI STADIONU ---
 
                         LocalDate matchDate = LocalDate.parse(dateStr);
                         LocalTime matchTime = timeStr.isBlank() ? LocalTime.of(20, 0) : LocalTime.parse(timeStr);
@@ -184,7 +178,6 @@ public class DataImportService {
         }
     }
 
-    // --- NOWA METODA: Import tabeli ligowej ---
     public void importLeagueTable(String leagueId, String season) {
         try {
             String json = sportsDbClient.getLeagueTable(leagueId, season);
@@ -199,13 +192,11 @@ public class DataImportService {
             for (JsonNode teamStatNode : tableNode) {
                 String externalTeamId = teamStatNode.path("idTeam").asText();
 
-                // Szukamy drużyny w naszej bazie
                 Optional<Team> teamOpt = teamRepository.findByExternalApiId(externalTeamId);
 
                 if (teamOpt.isPresent()) {
                     Team team = teamOpt.get();
 
-                    // Aktualizujemy statystyki
                     team.setLeagueRank(teamStatNode.path("intRank").asInt());
                     team.setRankDescription(teamStatNode.path("strDescription").asText(""));
                     team.setMatchesPlayed(teamStatNode.path("intPlayed").asInt());

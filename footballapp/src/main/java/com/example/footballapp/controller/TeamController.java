@@ -22,7 +22,6 @@ public class TeamController {
 
     @GetMapping
     public List<Team> getAllTeams() {
-        // Zmieniono na zwracanie posortowanej listy po pozycji (od 1 miejsca w dół)
         return teamRepository.findAll(Sort.by(Sort.Direction.ASC, "leagueRank"));
     }
 
@@ -34,13 +33,12 @@ public class TeamController {
     @PostMapping("/import-ekstraklasa")
     public String importEkstraklasa() {
         dataImportService.importTeamsFromEkstraklasa();
-        return "Import drużyn uruchomiony! Sprawdź konsolę.";
+        return "Import drużyn uruchomiony. Sprawdź konsolę.";
     }
 
-    // --- NOWY ENDPOINT: Import tabeli ---
     @PostMapping("/import-table")
     public String importTable(@RequestParam String leagueId, @RequestParam String season) {
         dataImportService.importLeagueTable(leagueId, season);
-        return "Import tabeli uruchomiony! Sprawdź konsolę.";
+        return "Import tabeli uruchomiony. Sprawdź konsolę.";
     }
 }

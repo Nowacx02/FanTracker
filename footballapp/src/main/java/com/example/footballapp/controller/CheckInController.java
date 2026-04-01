@@ -65,10 +65,8 @@ public class CheckInController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<CheckInResponseDto>> getUserCheckIns(@PathVariable Long userId) {
 
-        // 1. Pobieramy z bazy historię konkretnego użytkownika
         List<CheckIn> checkIns = checkInRepository.findByUserIdOrderByCheckInTimeDesc(userId);
 
-        // 2. Przepakowujemy skomplikowane Encje na czyste DTO
         List<CheckInResponseDto> response = checkIns.stream().map(checkIn -> {
             String title = checkIn.getMatch().getHomeTeam().getName() + " vs " + checkIn.getMatch().getAwayTeam().getName();
             String city = checkIn.getMatch().getHomeTeam().getCity();
@@ -78,13 +76,11 @@ public class CheckInController {
             return new CheckInResponseDto(title, city, round, time);
         }).collect(Collectors.toList());
 
-        // 3. Zwracamy listę do Postmana
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/ranking")
     public ResponseEntity<List<UserRankingDto>> getFanRanking() {
-        // Całą "brudną" robotę z sortowaniem i liczeniem wykonała już baza danych!
         return ResponseEntity.ok(checkInRepository.getTopFans());
     }
 }
