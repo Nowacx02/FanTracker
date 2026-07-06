@@ -40,4 +40,19 @@ public class SportsDbClient {
                 .retrieve()
                 .body(String.class);
     }
+
+    public String getTeamById(String teamId) {
+        return restClient.get()
+                .uri("/lookupteam.php?id={teamId}", teamId)
+                .retrieve()
+                .body(String.class);
+    }
+
+    public String getMatchesByRound(String leagueId, String season, String round) {
+        return restClient.get()
+                .uri("/eventsround.php?id={leagueId}&r={round}&s={season}", leagueId, round, season)
+                .retrieve()
+                .body(String.class);
+    }
+
 }

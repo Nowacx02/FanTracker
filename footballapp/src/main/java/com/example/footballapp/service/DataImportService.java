@@ -24,10 +24,7 @@ public class DataImportService {
     private final StadiumRepository stadiumRepository;
     private final ObjectMapper objectMapper;
 
-    public DataImportService(SportsDbClient sportsDbClient,
-                             TeamRepository teamRepository,
-                             MatchRepository matchRepository,
-                             StadiumRepository stadiumRepository) {
+    public DataImportService(SportsDbClient sportsDbClient, TeamRepository teamRepository, MatchRepository matchRepository, StadiumRepository stadiumRepository) {
         this.sportsDbClient = sportsDbClient;
         this.teamRepository = teamRepository;
         this.matchRepository = matchRepository;
@@ -35,15 +32,14 @@ public class DataImportService {
         this.objectMapper = new ObjectMapper();
     }
 
-    //IMPORT DRUŻYN
-    public void importTeamsFromEkstraklasa() {
+    public void importTeamsFromLeague(String leagueName) {
         try {
-            String json = sportsDbClient.getAllTeams("Polish Ekstraklasa");
+            String json = sportsDbClient.getAllTeams(leagueName);
             JsonNode root = objectMapper.readTree(json);
             JsonNode teamsNode = root.get("teams");
 
             if (teamsNode == null || teamsNode.isNull()) {
-                System.out.println("Nie znaleziono drużyn!");
+                System.out.println("Nie znaleziono drużyn dla ligi: " + leagueName);
                 return;
             }
 
@@ -71,20 +67,18 @@ public class DataImportService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Błąd podczas importu drużyn: " + e.getMessage());
+            System.err.println("Błąd podczas importu drużyn z ligi " + leagueName + ": " + e.getMessage());
         }
     }
 
-    //IMPORT MECZÓW
-    public void importMatchesForRound(String season, String round) {
+    public void importMatchesByRound(String leagueId, String season, String round) {
         try {
-            // (4422 to Ekstraklasa)
-            String json = sportsDbClient.getRoundMatches("4422", season, round);
+            String json = sportsDbClient.getMatchesByRound(leagueId, season, round);
             JsonNode root = objectMapper.readTree(json);
             JsonNode events = root.get("events");
 
             if (events == null || events.isNull()) {
-                System.out.println("Nie znaleziono meczów dla sezonu: " + season + ", kolejka: " + round);
+                System.out.println("Nie znaleziono meczów dla ligi " + leagueId + ", sezon: " + season + ", kolejka: " + round);
                 return;
             }
 
@@ -92,7 +86,7 @@ public class DataImportService {
                 String idEvent = event.path("idEvent").asText();
                 String idHomeTeam = event.path("idHomeTeam").asText();
                 String idAwayTeam = event.path("idAwayTeam").asText();
-                String idVenue = event.path("idVenue").asText(""); // Pobieramy ID stadionu
+                String idVenue = event.path("idVenue").asText("");
                 String dateStr = event.path("dateEvent").asText();
                 String timeStr = event.path("strTime").asText();
                 int intRound = event.path("intRound").asInt();
@@ -134,7 +128,6 @@ public class DataImportService {
                                     if (!strMap.isBlank() && strMap.contains(",")) {
                                         try {
                                             String[] cords = strMap.split(",");
-
                                             stadium.setLatitude(Double.parseDouble(cords[0].trim()));
                                             stadium.setLongitude(Double.parseDouble(cords[1].trim()));
                                         } catch (Exception e) {
@@ -143,7 +136,6 @@ public class DataImportService {
                                     }
 
                                     stadiumRepository.save(stadium);
-
                                     match.setStadium(stadium);
                                     System.out.println("Zapisano nowy stadion: " + stadium.getName());
                                 }
@@ -216,6 +208,82 @@ public class DataImportService {
             }
         } catch (Exception e) {
             System.err.println("Błąd podczas importu tabeli ligowej: " + e.getMessage());
+        }
+    }
+
+    public void importTeamsFromTable(String leagueId, String season) {
+        try {
+            String json = sportsDbClient.getLeagueTable(leagueId, season);
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode tableNode = root.get("table");
+
+            if (tableNode == null || tableNode.isNull()) {
+                System.out.println("Nie znaleziono tabeli dla ligi " + leagueId + " w sezonie " + season);
+                return;
+            }
+
+            for (JsonNode row : tableNode) {
+                String externalId = row.path("idTeam").asText();
+                String teamName = row.path("strTeam").asText();
+                String badgeUrl = row.path("strTeamBadge").asText("");
+
+                if (!externalId.isBlank()) {
+                    if (teamRepository.findByExternalApiId(externalId).isEmpty()) {
+                        Team team = new Team();
+                        team.setExternalApiId(externalId);
+                        team.setName(teamName);
+                        team.setBadgeUrl(badgeUrl);
+                        // Endpoint z tabelą zazwyczaj nie zwraca miasta, więc zostaje puste
+
+                        teamRepository.save(team);
+                        System.out.println("Zapisano nową drużynę z tabeli: " + teamName + " (ID: " + externalId + ")");
+                    } else {
+                        System.out.println("Pominięto, drużyna już istnieje: " + teamName);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Błąd podczas importu z tabeli: " + e.getMessage());
+        }
+    }
+
+    public void importSingleTeam(String teamId) {
+        try {
+            String json = sportsDbClient.getTeamById(teamId);
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode teamsNode = root.get("teams");
+
+            if (teamsNode == null || teamsNode.isNull()) {
+                System.out.println("Nie znaleziono drużyny o ID: " + teamId);
+                return;
+            }
+
+            // Pobieramy pierwszy i jedyny element z tablicy
+            JsonNode teamNode = teamsNode.get(0);
+
+            String externalId = teamNode.path("idTeam").asText();
+            String teamName = teamNode.path("strTeam").asText();
+            String league = teamNode.path("strLeague").asText();
+            String city = teamNode.path("strLocation").asText();
+            String badgeUrl = teamNode.path("strBadge").asText("");
+
+            if (!externalId.isBlank()) {
+                if (teamRepository.findByExternalApiId(externalId).isEmpty()) {
+                    Team team = new Team();
+                    team.setExternalApiId(externalId);
+                    team.setName(teamName);
+                    team.setLeague(league);
+                    team.setCity(city);
+                    team.setBadgeUrl(badgeUrl);
+
+                    teamRepository.save(team);
+                    System.out.println("Zapisano nową drużynę: " + teamName + " (ID: " + externalId + ")");
+                } else {
+                    System.out.println("Pominięto, drużyna już istnieje: " + teamName);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Błąd podczas ręcznego importu drużyny: " + e.getMessage());
         }
     }
 }

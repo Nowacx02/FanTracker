@@ -3,6 +3,7 @@ package com.example.footballapp.controller;
 import com.example.footballapp.entity.Match;
 import com.example.footballapp.repository.MatchRepository;
 import com.example.footballapp.service.DataImportService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -33,10 +34,17 @@ public class MatchController {
 
     @PostMapping("/import-round")
     public String importRound(
-            @RequestParam(defaultValue = "2025-2026") String season,
-            @RequestParam(defaultValue = "1") String round) {
+            @RequestParam String leagueId,
+            @RequestParam String season,
+            @RequestParam String round) {
+        dataImportService.importMatchesByRound(leagueId, season, round);
+        return "Import meczów z kolejki " + round + " dla ligi " + leagueId + " (sezon " + season + ") uruchomiony. Sprawdź konsolę.";
+    }
 
-        dataImportService.importMatchesForRound(season, round);
-        return "Import meczów uruchomiony dla sezonu " + season + ", kolejka " + round + ". Sprawdź konsolę.";
+    @GetMapping("/{id}")
+    public ResponseEntity<Match> getMatchById(@PathVariable Long id) {
+        return matchRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

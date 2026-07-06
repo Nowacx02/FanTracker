@@ -7,10 +7,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRankingDto {
+public class AwayStatsDto {
     private String username;
-    private long checkInCount;
-    private long uniqueStadiumsCount;
-    private String favoriteTeamName;
-    private String favoriteTeamBadgeUrl;
+    private int matchesAttended;
+    private int wins;
+    private int draws;
+    private int losses;
+    private double winPercentage;
 }

@@ -27,4 +27,6 @@ public class CheckIn {
     private Match match;
 
     private LocalDateTime checkInTime;
+
+    private String photoUrl;
 }

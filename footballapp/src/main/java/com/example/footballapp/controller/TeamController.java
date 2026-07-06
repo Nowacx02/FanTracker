@@ -30,15 +30,21 @@ public class TeamController {
         return teamRepository.save(team);
     }
 
-    @PostMapping("/import-ekstraklasa")
-    public String importEkstraklasa() {
-        dataImportService.importTeamsFromEkstraklasa();
-        return "Import drużyn uruchomiony. Sprawdź konsolę.";
+    @PostMapping("/import")
+    public String importTeams(@RequestParam String league) {
+        dataImportService.importTeamsFromLeague(league);
+        return "Import drużyn z ligi " + league + " uruchomiony. Sprawdź konsolę.";
     }
 
     @PostMapping("/import-table")
-    public String importTable(@RequestParam String leagueId, @RequestParam String season) {
-        dataImportService.importLeagueTable(leagueId, season);
-        return "Import tabeli uruchomiony. Sprawdź konsolę.";
+    public String importTeamsFromTable(@RequestParam String leagueId, @RequestParam String season) {
+        dataImportService.importTeamsFromTable(leagueId, season);
+        return "Import drużyn z tabeli ligi " + leagueId + " (sezon " + season + ") uruchomiony. Sprawdź konsolę.";
+    }
+
+    @PostMapping("/import-single")
+    public String importSingleTeam(@RequestParam String teamId) {
+        dataImportService.importSingleTeam(teamId);
+        return "Próba importu drużyny o ID " + teamId + " uruchomiona. Sprawdź konsolę.";
     }
 }

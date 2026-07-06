@@ -7,14 +7,26 @@ const Matches = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Stany dla filtrów
-  const [selectedRound, setSelectedRound] = useState('All');
-  const [selectedTeam, setSelectedTeam] = useState('All');
+  // Pobieranie zapisanych filtrów z localStorage lub ustawienie domyślnych
+  // Zewnętrzne API TheSportsDB używa nazwy "Polish Ekstraklasa"
+  const [selectedLeague, setSelectedLeague] = useState(localStorage.getItem('savedLeague') || 'Polish Ekstraklasa');
+  const [selectedRound, setSelectedRound] = useState(localStorage.getItem('savedRound') || 'All');
+  const [selectedTeam, setSelectedTeam] = useState(localStorage.getItem('savedTeam') || 'All');
 
   useEffect(() => {
     axios.get('http://localhost:8080/api/matches')
       .then(response => {
-        setMatches(response.data);
+        const data = response.data;
+        setMatches(data);
+        
+        // Jeśli nie mamy zapisanej kolejki, a mamy dane, ustawiamy domyślnie najniższą dla wybranej ligi
+        if (data.length > 0 && !localStorage.getItem('savedRound')) {
+          const leagueMatches = data.filter(m => m.homeTeam?.league === (localStorage.getItem('savedLeague') || 'Polish Ekstraklasa'));
+          const targetMatches = leagueMatches.length > 0 ? leagueMatches : data;
+          const firstRound = Math.min(...targetMatches.map(m => m.matchRound));
+          setSelectedRound(firstRound.toString());
+        }
+        
         setLoading(false);
       })
       .catch(error => {
@@ -23,17 +35,40 @@ const Matches = () => {
       });
   }, []);
 
+  // Zapisywanie filtrów do localStorage za każdym razem, gdy ulegną zmianie
+  useEffect(() => {
+    localStorage.setItem('savedLeague', selectedLeague);
+    localStorage.setItem('savedRound', selectedRound);
+    localStorage.setItem('savedTeam', selectedTeam);
+  }, [selectedLeague, selectedRound, selectedTeam]);
+
+  // Obsługa zmiany ligi (resetuje kolejkę i drużynę, aby uniknąć błędnych filtrów)
+  const handleLeagueChange = (e) => {
+    setSelectedLeague(e.target.value);
+    setSelectedRound('All');
+    setSelectedTeam('All');
+  };
+
   if (loading) {
     return <div className="text-center text-blue-400 mt-20 text-xl font-semibold">Ładowanie terminarza... ⏳</div>;
   }
 
-  // --- LOGIKA FILTRÓW ---
-  const uniqueRounds = [...new Set(matches.map(m => m.matchRound))].sort((a, b) => a - b);
-  const uniqueTeams = [...new Set(matches.flatMap(m => [m.homeTeam?.name, m.awayTeam?.name]))]
+  // 1. Unikalne ligi z pobranych meczów
+  const uniqueLeagues = [...new Set(matches.map(m => m.homeTeam?.league))].filter(Boolean).sort();
+
+  // 2. Filtrujemy mecze najpierw po lidze
+  const matchesInLeague = selectedLeague === 'All' 
+    ? matches 
+    : matches.filter(match => match.homeTeam?.league === selectedLeague || match.awayTeam?.league === selectedLeague);
+
+  // 3. Na podstawie przefiltrowanej ligi generujemy dostępne kolejki i drużyny
+  const uniqueRounds = [...new Set(matchesInLeague.map(m => m.matchRound))].sort((a, b) => a - b);
+  const uniqueTeams = [...new Set(matchesInLeague.flatMap(m => [m.homeTeam?.name, m.awayTeam?.name]))]
     .filter(Boolean)
     .sort();
 
-  const filteredMatches = matches.filter(match => {
+  // 4. Końcowe filtrowanie po kolejce i drużynie
+  const filteredMatches = matchesInLeague.filter(match => {
     const matchRoundCondition = selectedRound === 'All' || match.matchRound.toString() === selectedRound.toString();
     const teamCondition = selectedTeam === 'All' || match.homeTeam?.name === selectedTeam || match.awayTeam?.name === selectedTeam;
     return matchRoundCondition && teamCondition;
@@ -41,43 +76,57 @@ const Matches = () => {
 
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <h2 className="text-3xl font-extrabold text-white flex items-center gap-3">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-8 gap-4">
+        <h2 className="text-3xl font-extrabold text-white flex items-center gap-3 shrink-0">
           <Calendar className="text-blue-500" size={32} /> Terminarz Spotkań
         </h2>
 
-        {/* --- SEKCJA FILTRÓW --- */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800">
-          <div className="flex items-center gap-2 text-slate-400">
+        {/* --- ZMODYFIKOWANA SEKCJA FILTRÓW --- */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-slate-900 p-4 rounded-xl border border-slate-800 w-full xl:w-auto">
+          <div className="flex items-center gap-2 text-slate-400 shrink-0 mb-2 lg:mb-0">
             <Filter size={18} />
             <span className="text-sm font-medium">Filtruj:</span>
           </div>
           
-          <select 
-            className="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none"
-            value={selectedRound}
-            onChange={(e) => setSelectedRound(e.target.value)}
-          >
-            <option value="All">Wszystkie kolejki</option>
-            {uniqueRounds.map(round => (
-              <option key={round} value={round}>Kolejka {round}</option>
-            ))}
-          </select>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+            <select 
+              className="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none w-full truncate"
+              value={selectedLeague}
+              onChange={handleLeagueChange}
+            >
+              <option value="All">Wszystkie ligi</option>
+              {uniqueLeagues.map(league => (
+                <option key={league} value={league}>{league}</option>
+              ))}
+            </select>
 
-          <select 
-            className="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none w-full sm:w-auto"
-            value={selectedTeam}
-            onChange={(e) => setSelectedTeam(e.target.value)}
-          >
-            <option value="All">Wszystkie drużyny</option>
-            {uniqueTeams.map(team => (
-              <option key={team} value={team}>{team}</option>
-            ))}
-          </select>
+            <select 
+              className="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none w-full truncate"
+              value={selectedRound}
+              onChange={(e) => setSelectedRound(e.target.value)}
+            >
+              <option value="All">Wszystkie kolejki</option>
+              {uniqueRounds.map(round => (
+                <option key={round} value={round}>Kolejka {round}</option>
+              ))}
+            </select>
+
+            <select 
+              className="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none w-full truncate"
+              value={selectedTeam}
+              onChange={(e) => setSelectedTeam(e.target.value)}
+            >
+              <option value="All">Wszystkie drużyny</option>
+              {uniqueTeams.map(team => (
+                <option key={team} value={team}>{team}</option>
+              ))}
+            </select>
+          </div>
         </div>
+        {/* --- KONIEC ZMODYFIKOWANEJ SEKCJI --- */}
+        
       </div>
       
-      {/* Siatka kart z meczami */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredMatches.length > 0 ? (
           filteredMatches.map((match) => {
@@ -87,7 +136,6 @@ const Matches = () => {
             return (
               <div key={match.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl hover:border-blue-500 transition-all duration-300 flex flex-col justify-between">
                 
-                {/* Nagłówek karty (Kolejka i Status) */}
                 <div className="flex justify-between items-center mb-6">
                   <div className="text-sm px-3 py-1 bg-blue-900/30 text-blue-400 rounded-full font-semibold">
                     Kolejka {match.matchRound}
@@ -99,10 +147,8 @@ const Matches = () => {
                   )}
                 </div>
                 
-                {/* --- NOWY UKŁAD: HERB NAD NAZWĄ --- */}
                 <div className="flex justify-between items-center text-white mb-8 gap-2">
                   
-                  {/* Drużyna Gospodarzy */}
                   <div className="flex-1 flex flex-col items-center text-center gap-3">
                     {match.homeTeam?.badgeUrl ? (
                       <img 
@@ -120,7 +166,6 @@ const Matches = () => {
                     </span>
                   </div>
                   
-                  {/* Wynik */}
                   <div className="shrink-0 flex items-center justify-center px-2">
                     {isPlayed ? (
                       <div className="px-4 py-3 bg-slate-950 border border-slate-700 rounded-lg text-2xl sm:text-3xl text-blue-400 font-black shadow-inner whitespace-nowrap text-center">
@@ -133,7 +178,6 @@ const Matches = () => {
                     )}
                   </div>
 
-                  {/* Drużyna Gości */}
                   <div className="flex-1 flex flex-col items-center text-center gap-3">
                     {match.awayTeam?.badgeUrl ? (
                       <img 
@@ -153,7 +197,6 @@ const Matches = () => {
                   
                 </div>
                 
-                {/* Informacje o dacie i stadionie */}
                 <div className="text-sm text-slate-400 space-y-2 border-t border-slate-800 pt-4 mt-auto">
                   <div className="flex items-center gap-2">
                     <Clock size={16} className="text-slate-500 shrink-0" /> 
@@ -171,7 +214,6 @@ const Matches = () => {
                   </div>
                 </div>
 
-                {/* Przycisk przejścia do szczegółów */}
                 <Link 
                   to={`/matches/${match.id}`} 
                   state={{ match: match }} 

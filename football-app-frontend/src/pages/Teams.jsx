@@ -8,7 +8,6 @@ const Teams = () => {
   const [selectedLeague, setSelectedLeague] = useState('All');
   const [message, setMessage] = useState('');
   
-  // Trzymamy użytkownika w stanie, aby komponent mógł natychmiast zareagować na zmianę
   const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user')));
 
   useEffect(() => {
@@ -23,9 +22,7 @@ const Teams = () => {
   const handleSetFavorite = (teamId, teamName) => {
     axios.put(`http://localhost:8080/api/users/${currentUser.id}/favorite-team/${teamId}`)
       .then(response => {
-        // Aktualizujemy dane usera w przeglądarce
         localStorage.setItem('user', JSON.stringify(response.data));
-        // Aktualizujemy stan Reacta (to powoduje natychmiastowe podświetlenie!)
         setCurrentUser(response.data);
         
         setMessage(`Ustawiono ${teamName} jako ulubioną drużynę! 🏆`);
@@ -70,7 +67,6 @@ const Teams = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredTeams.map(team => {
           
-          // Sprawdzamy, czy ten konkretny kafelek to nasza ulubiona drużyna
           const isFavorite = currentUser?.favoriteTeam?.id === team.id;
 
           return (
@@ -102,7 +98,6 @@ const Teams = () => {
                   : 'bg-slate-800 hover:bg-yellow-600/20 text-slate-300 hover:text-yellow-500 border border-slate-700 hover:border-yellow-600/50'
                 }`}
               >
-                {/* Gwiazdka wypełnia się (fill), gdy drużyna jest ulubiona */}
                 <Star size={18} className={isFavorite ? "fill-yellow-500" : ""} /> 
                 {isFavorite ? 'Wybrana' : 'Wybierz'}
               </button>
